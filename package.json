@@ -1,0 +1,19 @@
+{
+  "name": "dgrid-export",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node_modules/.bin/intern-client config=test/intern"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dgrid": "^1.1.0",
+    "dojo": "^1.12.2",
+    "dojo-dstore": "^1.1.1"
+  },
+  "devDependencies": {
+    "intern": "^3.4.2"
+  }
+}

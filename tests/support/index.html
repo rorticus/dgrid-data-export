@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="../../node_modules/dgrid/css/dgrid.css">
+    <script src="../../node_modules/dojo/dojo.js"></script>
+</head>
+
+<body>
+    <div id="grid"></div>
+</body>
+<script>
+    require([
+        'dgrid/OnDemandGrid',
+        '../../src/DataExport.js',
+        'dojo-dstore/Memory',
+        'dgrid/ColumnSet',
+        'dgrid/extensions/ColumnReorder',
+        'dgrid/extensions/CompoundColumns',
+        'dojo/_base/declare',
+        'dojo/domReady'
+    ], function (
+        OnDemandGrid,
+        DataExport,
+        Memory,
+        ColumnSet,
+        ColumnReorder,
+        CompoundColumns,
+        declare
+    ) {
+            var Grid = declare([OnDemandGrid, DataExport, CompoundColumns, ColumnReorder ]);
+            var rows = [];
+            for (var i = 0; i < 25; i++) {
+                rows.push({
+                    id: i,
+                    field1: 'field 1 ' + i,
+                    field2: 'field 2 ' + i,
+                    field3: 'none'
+                });
+            }
+
+            var store = new Memory({
+                data: rows
+            });
+
+            var grid = window.grid = new Grid({
+                collection: store,
+                columns: [
+                    {
+                        label: 'The Fields',
+                        children: [
+                            { field: 'field1', label: 'field 1', order: 2 },
+                            { field: 'field2', label: 'field 2', order: 1 }
+                        ]
+                    }
+                ]
+            }, 'grid');
+            grid.startup();
+        });
+
+</script>
+
+</html>
