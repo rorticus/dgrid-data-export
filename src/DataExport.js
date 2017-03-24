@@ -1,14 +1,14 @@
 define([
     'dojo/_base/declare',
-    'dojo/Deferred'
-], function (declare, Deferred) {
+    'dojo/promise/all'
+], function (declare, whenAll) {
     function getFieldsFromColumns(grid) {
         var subRow = grid.subRows[0];
         return subRow.reduce(function (fields, column) {
-        if (!column.hidden) {
-            fields.push(column.field);
-        }
-        return fields;
+            if (!column.hidden) {
+                fields.push(column.field);
+            }
+            return fields;
         }, []);
     }
 
@@ -39,25 +39,27 @@ define([
     function getFields(grid) {
         if(grid.columnSets) {
             return getFieldsFromColumnSets(grid);
-        } else {
+        }
+        else {
             return getFieldsFromColumns(grid);
         }
-
-        return fields;
     }
 
     return declare(null, {
-        exportData: function () {
-            var deferred = new Deferred();
-            var grid = this;
+        childrenProperty: '__children__',
 
-            this.collection.fetch().then(function (items) {
+        exportData: function () {
+            var grid = this;
+            var collection = this._renderedCollection;
+            var isTree = Boolean(this._treeColumn && collection.mayHaveChildren);
+
+            function processItems(items) {
                 var fields = getFields(grid);
 
                 // Reduce the store to an array containing only fields present in the
                 // `fields` array created above, sorted by the order of the `fields` array.
                 var visibleValues = items.map(function (item) {
-                    return Object.keys(item)
+                    var result = Object.keys(item)
                         .sort(function (a, b) {
                             // If the current field name (`a`) comes before the next field name (`b`) in
                             // the fields array above, then subtracting the index of `b` from the index of `a`
@@ -74,12 +76,28 @@ define([
                             }
                             return visible;
                         }, {});
+
+                    if (isTree && collection.mayHaveChildren(item)) {
+                        var childCollection = collection.getChildren(item);
+                        if (grid.sort && grid.sort.length > 0) {
+                            childCollection = childCollection.sort(grid.sort);
+                        }
+                        return childCollection.fetch().then(processItems).then(function (items) {
+                            if (items.length) {
+                                result[grid.childrenProperty] = items;
+                            }
+                            return result;
+                        });
+                    }
+                    else {
+                        return result;
+                    }
                 });
 
-                deferred.resolve(visibleValues);
-            });
+                return whenAll(visibleValues);
+            }
 
-            return deferred;
+            return collection.fetch().then(processItems);
         }
     });
 });

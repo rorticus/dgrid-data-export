@@ -40,27 +40,60 @@ define([
         }
 
         function createTreeStore(count) {
+            count = (count || 25);
+
             var rows = [];
-            for (var i = 0; i < (count || 25); i++) {
+            for (var i = 0; i < count; i++) {
                 rows.push({
                     id: i,
                     field1: 'field 1 ' + i,
                     field2: 'field 2 ' + i,
-                    field3: 'field 3 ' + i
+                    field3: 'field 3 ' + i,
+                    parent: null
                 });
             }
 
-            for(i = 0; i < (count || 25); i++) {
-                rows.push({
-                    id: (count || 25) + i,
-                    field1: 'sub row field 1 ' + i,
-                    parent: i
-                });
+            for(i = 0; i < (count - 1); i++) {
+                for (var j = 0; j < 2; j++) {
+                    var childId = count + (2 * i) + j;
+                    rows.push({
+                        id: childId,
+                        field1: 'sub row field 1 ' + i + '-' + j,
+                        parent: i
+                    });
+                }
             }
 
             return new declare([Memory, TreeStore])({
                 data: rows
             });
+        }
+
+        function createTreeGrid(options) {
+            options = options || {};
+
+            var Grid = declare([OnDemandGrid, DataExport, Tree]);
+
+            var collection = options.collection || createTreeStore(3).getRootCollection();
+            var gridOptions = {
+                collection: collection,
+                columns: [
+                    { field: 'field1', label: 'field 1', renderExpando: !options.skipExpando },
+                    { field: 'field2', label: 'field 2' }
+                ]
+            };
+
+            if (options.childrenProperty) {
+                gridOptions.childrenProperty = options.childrenProperty;
+            }
+            if (options.sort) {
+                gridOptions.sort = options.sort;
+            }
+
+            var grid = new Grid(gridOptions);
+            grid.startup();
+
+            return grid;
         }
 
         registerSuite({
@@ -75,6 +108,7 @@ define([
                         { field: 'field2', label: 'field 2' }
                     ]
                 });
+                grid.startup();
 
                 return grid.exportData().then(function (data) {
                     assert.deepEqual(data, [
@@ -107,6 +141,7 @@ define([
                         ]
                     ],
                 });
+                grid.startup();
 
                 return grid.exportData().then(function (data) {
                     assert.deepEqual(data, [
@@ -131,6 +166,7 @@ define([
                         { field: 'field2', label: 'field 2', order: 1 }
                     ]
                 });
+                grid.startup();
 
                 return grid.exportData().then(function (data) {
                     assert.deepEqual(data, [
@@ -166,6 +202,7 @@ define([
                         ]
                     ],
                 });
+                grid.startup();
 
                 return grid.exportData().then(function (data) {
                     assert.deepEqual(data, [
@@ -192,6 +229,7 @@ define([
                         { field: 'field2', label: 'field 2' }
                     ]
                 });
+                grid.startup();
 
                 return grid.exportData().then(function (data) {
                     assert.deepEqual(data, [
@@ -205,35 +243,173 @@ define([
                 });
             },
 
-            'with Tree': function () {
-                var Grid = declare([OnDemandGrid, DataExport, Tree]);
-                var grid = new Grid({
-                    collection: createTreeStore(2),
-                    columns: [
-                        { field: 'field1', label: 'field 1', renderExpando: true },
-                        { field: 'field2', label: 'field 2' }
-                    ]
-                });
+            'dgrid/Tree': {
+                'basic': function () {
+                    var grid = createTreeGrid();
+                    return grid.exportData().then(function (data) {
+                        assert.deepEqual(data, [
+                            {
+                                field1: 'field 1 0',
+                                field2: 'field 2 0',
+                                __children__: [
+                                    {
+                                        field1: 'sub row field 1 0-0'
+                                    },
+                                    {
+                                        field1: 'sub row field 1 0-1'
+                                    }
+                                ]
+                            },
+                            {
+                                field1: 'field 1 1',
+                                field2: 'field 2 1',
+                                __children__: [
+                                    {
+                                        field1: 'sub row field 1 1-0'
+                                    },
+                                    {
+                                        field1: 'sub row field 1 1-1'
+                                    }
+                                ]
+                            },
+                            {
+                                field1: 'field 1 2',
+                                field2: 'field 2 2'
+                            }
+                        ]);
+                    });
+                },
 
-                return grid.exportData().then(function (data) {
-                    console.log(data);
-                    assert.deepEqual(data, [
-                        {
-                            field1: 'field 1 0',
-                            field2: 'field 2 0'
-                        },
-                        {
-                            field1: 'sub row field 1 0'
-                        },
-                        {
-                            field1: 'field 1 1',
-                            field2: 'field 2 1'
-                        },
-                        {
-                            field1: 'sub row field 1 1'
-                        }
-                    ]);
-                });
+                'sorted': function () {
+                    var grid = createTreeGrid({ sort: [{ property: 'id', descending: true }] });
+                    return grid.exportData().then(function (data) {
+                        assert.deepEqual(data, [
+                            {
+                                field1: 'field 1 2',
+                                field2: 'field 2 2'
+                            },
+                            {
+                                field1: 'field 1 1',
+                                field2: 'field 2 1',
+                                __children__: [
+                                    {
+                                        field1: 'sub row field 1 1-1'
+                                    },
+                                    {
+                                        field1: 'sub row field 1 1-0'
+                                    }
+                                ]
+                            },
+                            {
+                                field1: 'field 1 0',
+                                field2: 'field 2 0',
+                                __children__: [
+                                    {
+                                        field1: 'sub row field 1 0-1'
+                                    },
+                                    {
+                                        field1: 'sub row field 1 0-0'
+                                    }
+                                ]
+                            }
+                        ]);
+                    });
+                },
+                'non-default childrenProperty': function () {
+                    var grid = createTreeGrid({ childrenProperty: 'children' });
+                    return grid.exportData().then(function (data) {
+                        assert.deepEqual(data, [
+                            {
+                                field1: 'field 1 0',
+                                field2: 'field 2 0',
+                                children: [
+                                    {
+                                        field1: 'sub row field 1 0-0'
+                                    },
+                                    {
+                                        field1: 'sub row field 1 0-1'
+                                    }
+                                ]
+                            },
+                            {
+                                field1: 'field 1 1',
+                                field2: 'field 2 1',
+                                children: [
+                                    {
+                                        field1: 'sub row field 1 1-0'
+                                    },
+                                    {
+                                        field1: 'sub row field 1 1-1'
+                                    }
+                                ]
+                            },
+                            {
+                                field1: 'field 1 2',
+                                field2: 'field 2 2'
+                            }
+                        ]);
+                    });
+                },
+
+                'no expando': function () {
+                    var grid = createTreeGrid({ skipExpando: true });
+                    return grid.exportData().then(function (data) {
+                        assert.deepEqual(data, [
+                            {
+                                field1: 'field 1 0',
+                                field2: 'field 2 0'
+                            },
+                            {
+                                field1: 'field 1 1',
+                                field2: 'field 2 1'
+                            },
+                            {
+                                field1: 'field 1 2',
+                                field2: 'field 2 2'
+                            }
+                        ]);
+                    });
+                },
+
+                'non-hierarchical collection': function () {
+                    var grid = createTreeGrid({ collection: createNormalStore(3) });
+                    return grid.exportData().then(function (data) {
+                        assert.deepEqual(data, [
+                            {
+                                field1: 'field 1 0',
+                                field2: 'field 2 0'
+                            },
+                            {
+                                field1: 'field 1 1',
+                                field2: 'field 2 1'
+                            },
+                            {
+                                field1: 'field 1 2',
+                                field2: 'field 2 2'
+                            }
+                        ]);
+                    });
+                },
+
+                'non-hierarchical collection': function () {
+                    var grid = createTreeGrid({ collection: createNormalStore(3) });
+                    return grid.exportData().then(function (data) {
+                        assert.deepEqual(data, [
+                            {
+                                field1: 'field 1 0',
+                                field2: 'field 2 0'
+                            },
+                            {
+                                field1: 'field 1 1',
+                                field2: 'field 2 1'
+                            },
+                            {
+                                field1: 'field 1 2',
+                                field2: 'field 2 2'
+                            }
+                        ]);
+                    });
+                }
             }
         });
     });
