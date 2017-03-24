@@ -1,13 +1,12 @@
 {
-  "name": "dgrid-export",
+  "name": "dgrid-data-export",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/intern-client config=test/intern"
+    "test": "intern-runner config=tests/intern"
   },
   "author": "",
-  "license": "ISC",
+  "license": "BSD-3-Clause",
   "dependencies": {
     "dgrid": "^1.1.0",
     "dojo": "^1.12.2",
