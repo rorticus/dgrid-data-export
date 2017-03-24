@@ -36,9 +36,10 @@ define({
 	// If you want to use a different loader than the default loader, see
 	// <https://theintern.github.io/intern/#option-useLoader> for more information.
 	loaderOptions: {
+		baseUrl: '../..',
 		// Packages that should be registered with the loader in each testing environment
 		packages: [
-			{ name: 'src', location: 'src' },
+			{ name: 'src', location: '' },
 			{ name: 'tests', location: 'tests' },
 			{ name: 'dojo', location: 'node_modules/dojo' },
 			{ name: 'dstore', location: 'node_modules/dojo-dstore' },
